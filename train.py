@@ -178,35 +178,75 @@ def plot_validation_samples(
     num_samples = min(pred_structures.shape[0], num_to_plot)
 
     for i in range(num_samples):
+        # (N_Points, 3, 2)
         pred_sample = pred_structures[i]
         true_sample = true_structures[i]
 
-        # Get vertices for plotting lines
-        pred_vertices = pred_sample[:, 1, :]
-        true_vertices = true_sample[:, 1, :]
-
         ax = axes[i]
 
-        # Plot Ground Truth
-        ax.plot(
-            true_vertices[:, 0],
-            true_vertices[:, 1],
-            "o-",
+        # Plot all true atoms as dots
+        true_atoms = true_sample.reshape(-1, 2)
+        ax.scatter(
+            true_atoms[:, 0],
+            true_atoms[:, 1],
+            s=10,
             c="blue",
-            alpha=0.7,
-            markersize=5,
-            label="Ground Truth",
+            alpha=0.4,
+            label="Ground Truth Atoms",
         )
-        # Plot Prediction
-        ax.plot(
-            pred_vertices[:, 0],
-            pred_vertices[:, 1],
-            "x--",
+
+        # Plot all pred atoms as 'x'
+        pred_atoms = pred_sample.reshape(-1, 2)
+        ax.scatter(
+            pred_atoms[:, 0],
+            pred_atoms[:, 1],
+            s=10,
             c="red",
-            alpha=0.7,
-            markersize=5,
-            label="Prediction",
+            alpha=0.4,
+            marker="x",
+            label="Predicted Atoms",
         )
+
+        # Plot the arms (lines)
+        for j in range(true_sample.shape[0]):  # Iterate over N_Points
+            true_p0, true_p1, true_p2 = true_sample[j]
+            pred_p0, pred_p1, pred_p2 = pred_sample[j]
+
+            # Plot true arms
+            ax.plot(
+                [true_p0[0], true_p1[0]],
+                [true_p0[1], true_p1[1]],
+                c="blue",
+                alpha=0.7,
+                linewidth=2,
+                label="GT Arms" if j == 0 else None,
+            )
+            ax.plot(
+                [true_p1[0], true_p2[0]],
+                [true_p1[1], true_p2[1]],
+                c="blue",
+                alpha=0.7,
+                linewidth=2,
+            )
+
+            # Plot pred arms
+            ax.plot(
+                [pred_p0[0], pred_p1[0]],
+                [pred_p0[1], pred_p1[1]],
+                c="red",
+                alpha=0.7,
+                linestyle="-",
+                linewidth=2,
+                label="Pred Arms" if j == 0 else None,
+            )
+            ax.plot(
+                [pred_p1[0], pred_p2[0]],
+                [pred_p1[1], pred_p2[1]],
+                c="red",
+                alpha=0.7,
+                linestyle="-",
+                linewidth=2,
+            )
 
         ax.set_title(f"Sample {i + 1}")
         ax.legend()
@@ -219,7 +259,7 @@ def plot_validation_samples(
     plt.suptitle(
         f"Validation Samples - Epoch {epoch} - {loss_type.upper()} Loss", fontsize=16
     )
-    plt.tight_layout(rect=(0.0, 0.03, 1.0, 0.95))
+    plt.tight_layout(rect=(0, 0.03, 1, 0.95))
 
     output_image = os.path.join(
         save_dir, f"validation_plot_epoch_{epoch:04d}_{loss_type}.png"
@@ -433,7 +473,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--sigma_data",
         type=float,
-        default=1.5,
+        default=1.0,
         help="Data variance parameter (sigma_data in loss)",
     )
     parser.add_argument(
